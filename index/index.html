@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>
+			Chapter 12
+		</title>
+	</head>
+	<style>
+		.break{
+			flex-basis: 100%;
+			height: 0;
+		}
+		
+		.inputContainer{
+			padding: 5px 20px 5px 0px;
+		}
+	</style>
+	<script>
+		var characters = ["可以","借","明天","用","得","接","机场","妹妹","玩","飞机","到","手排档","手","开","应该","问题","白","停","停车场","这次","练习","这样","就","能","进步","自动排档"];
+		var pingyin = ["Kěyǐ","Jiè","Míngtiān","Yòng","dĕi","Jiē","Jīchǎng","Mèimei","Wán","Fēijī","Dào","Shǒu páidàng","Shǒu","Kāi","Yīnggāi","Wèntí","Bái","Tíng","Tíngchē chǎng","Zhè cì","Liànxí",
+		"Zhèyàng","Jiù","Néng","Jìnbù","Zìdòng páidàng"];
+		var meaning = ["can, may","to borrow","tomorrow","to use","must, have to","to pick up","airport","younger sister","to play, to have fun","airplane","to arrive","manual transmission","hand",
+		"to drive, to turn on, to open","should","problem, question","white","to park","parking lot","this time","to practice","thus, in this way, like this",
+		"then (connects two clauses)","can, may, be able to","to improve","automatic transmission"];
+		var answer_key = {};
+		var student_key = {};
+//		Ā ā Á á Ǎ ǎ À à Ē ē É é Ě ě È è Ī ī Í í Ǐ ǐ Ì ì Ō ō Ó ó Ǒ ǒ Ò ò Ū ū Ú ú Ǔ ǔ Ù ǔ Ü ü Ǘ ǘ Ǚ ǚ Ǜ ǜ 
+		//lol stacks over flow ez
+		function shuffle(array) {
+			var currentIndex = array.length, temporaryValue, randomIndex;
+			while (0 !== currentIndex) {
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex -= 1;
+				temporaryValue = array[currentIndex];
+				array[currentIndex] = array[randomIndex];
+				array[randomIndex] = temporaryValue;
+			}
+			 return array;
+		}
+		
+		function generateAnswerkey(characters,pingyin,meaning){
+			var answer_key = {};
+			for(var i in characters){
+				if( i == 'length') break;
+				answer_key[characters[i]] = {};
+				answer_key[characters[i]][pingyin[i]] = meaning[i];
+				
+			}
+			return answer_key;
+		}
+		
+		function calculate(answer_key, student_key){
+			var s;
+			var inncorect_s = '';
+			var max_score = 26;
+			var correct = 0;
+			var incorrect_array = [];
+			for(var i in answer_key){
+				var answer = answer_key[i];
+				var key = student_key[i];
+				if(JSON.stringify(answer) == JSON.stringify(key)) correct++;
+				else incorrect_array.push(i);
+			}
+			if(correct == max_score){
+				s = "Wow you got a perfect score!";
+			}else{
+				s = "You're score is " + correct + "/" + max_score +  ". You got the following expressions incorrect :" + JSON.stringify(incorrect_array);
+			}
+			s+= " Refresh the page if you wanna try again. I'm too lazy to makè a refresh button c:";
+			var output = document.getElementById('output');
+			output.innerHTML = s;
+		}
+		
+		function generateProblem(characters,pingyin,meaning){
+			var temp_characters = shuffle(JSON.parse(JSON.stringify(characters)));
+//			var temp_characters = JSON.parse(JSON.stringify(characters))
+			var temp_pingyin = shuffle(JSON.parse(JSON.stringify(pingyin)));
+			var temp_meaning = shuffle(JSON.parse(JSON.stringify(meaning)));
+			var ids = {characters : temp_characters,
+						pingyin : temp_pingyin,
+						meaning : temp_meaning
+						};
+			var num = 0;
+			for(var i in characters){
+				var line_div = document.createElement('div');
+				line_div.style.display = "flex";
+				line_div.style.padding = '2px';
+				for(j in ids){
+					var new_div = document.createElement('div');
+					new_div.style.width = "250px";
+					new_div.innerHTML = (j == 'characters') ? num + '. ' + ids[j][i] : ids[j][i];
+					if(j != 'characters'){
+						var input_tag = document.createElement('input');
+						input_tag.type = 'text';
+						input_tag.style.width = '25px';
+						input_tag.style.marginRight = '2px';				
+						input_tag.className = j + '_input';
+						line_div.appendChild(input_tag);
+					}
+					new_div.id = j+num;
+					if(j == 'characters') new_div.className = 'characters';
+					else if(j == 'pingyin') new_div.className = 'pingyin';
+					else new_div.className = 'meaning';
+					line_div.appendChild(new_div);
+				}
+				num++;
+				document.getElementById('test').appendChild(line_div);
+			}
+		}
+
+		function Check(){
+			var pingyin_inputs = document.getElementsByClassName('pingyin_input');
+			var meaning_inputs = document.getElementsByClassName('meaning_input');
+			var mapped_inputs = {};
+			for(var x in pingyin_inputs){
+				if(pingyin_inputs[x].value == '') pingyin_inputs[x].value = '0';
+				if(meaning_inputs[x].value == '') meaning_inputs[x].value = '0';
+			}
+			mapped_inputs['pingyin'] = {};
+			mapped_inputs['meaning'] = {};
+			var randomized_characters = document.getElementsByClassName('characters');
+			var randomized_pingyin = document.getElementsByClassName('pingyin');
+			var randomized_meaning = document.getElementsByClassName('meaning');
+			var meaning_array = [];
+			for(var i in meaning_inputs){
+				meaning_array.push(meaning_inputs[i].value);
+			}
+			var meaning_keys = Object.keys(meaning_array);
+			for(var i in pingyin_inputs){
+				if (i == 'length') break;
+				var input = pingyin_inputs[i].value;
+				var character = randomized_characters[parseInt(input)].innerHTML.substring(randomized_characters[parseInt(input)].innerHTML.indexOf('. ')+2,randomized_characters[parseInt(input)].innerHTML.length);
+				var obj = {};
+				obj[character] = {};
+				if(meaning_array.includes(input)) obj[character][randomized_pingyin[i].innerHTML] = randomized_meaning[meaning_array.indexOf(input)].innerHTML;
+				else obj[character][randomized_pingyin[i]] = randomized_meaning[0];
+				student_key[character] = obj[character];
+			}
+			calculate(generateAnswerkey(characters,pingyin,meaning),student_key);
+		}
+	</script>
+	<body>
+		<div>
+			<div style = 'font-weight : bold; font-size : 1.2em'>
+				Anyways, to do this 'mock test', match the characters (1st column) with its pingyin (2nd column) and meaning (3rd meaning) by typing the corresponding number. <br />
+				So for example, if #0 was <span style = 'font-weight : normal'>'同学们好'</span>, thěn i would type 0 next to <span style = 'font-weight : normal'>'Tóngxuémen hǎo'</span> and 
+				<span style = 'font-weight : normal'>'Hello, students'</span><br />
+				Refresh the page to redo/restart. <br />
+			</div>
+			<div>
+				There will also be problems if leave inputs blanks or if you repeat numbers on the column. Check the textbook to see if the stuff is right too
+			</div>
+			<div>
+				Font too small? Press ctr (fn for macs I think) and  the 'plus' key until you aren't squinting anymore.
+			</div>
+			<div>
+<!--				Heres the vowels that you can't type on your keyboard.	ā  á  ǎ  à  ē  é  ě  ō  ó  ǒ  ò  ī  í  ǐ  ì  ū  ú  ǔ  ù  ǖ  ǘ  ǚ  ǜ -->
+			</div>
+			<div style = "display: flex">
+				<div id = "test" style = 'border:1px solid; padding:10px; margin : 5px;'>
+				</div>
+				<div>
+					<div style = "padding: 5px 0px 5px">
+						Create your own word bank
+					</div>
+					<div class ='break'>
+					</div>
+					<div class = 'input'>
+						Title of Word Bank: <input form = "text" />
+					</div>
+					<div style = "display: flex">
+						<div class = 'inputContainer'>
+							Character: <input  form = "text" style = "width: 100px"/>
+						</div>
+						<div class = 'inputContainer'>
+							Pronounciation: <input form = "text" />
+						</div>
+						<div class = 'inputContainer'>
+							English Translation: <input form = "text" />
+						</div>
+						<div style = " padding: 5px 0px 5px">
+							<button>
+								Submit
+							</button>
+						</div>
+					</div>						
+				</div>
+			</div>
+			<div style='padding : 10px'>
+				<button onclick = 'Check()'>
+					Check Answer
+				</button>
+			</div>
+			<div id='output'>
+			</div>
+		</div>
+		<script>
+			generateAnswerkey(characters,pingyin,meaning);
+			generateProblem(characters,pingyin,meaning);
+		</script>
+	</body>
+</html>

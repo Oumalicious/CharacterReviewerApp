@@ -1,0 +1,303 @@
+<!DOCTYPE HTML>
+<!-- Name: asydgasdygasd -->
+<html>
+	<head>
+		<title>
+			CISC 4900
+		</title>
+	</head>
+	<style>
+		.break{
+			flex-basis: 100%;
+			height: 0;
+		}
+		
+		.inputContainer{
+			padding: 5px 20px 5px 0px;
+		}
+	</style>
+	<script>
+		var prevObj = {};
+		function insertWord(){
+			let character = document.getElementById("inputCharacter").value;
+			let pronounciation = document.getElementById("inputPronounciation").value;
+			let translation = document.getElementById("inputTranslation").value;
+			if(character === '' || pronounciation === '' ||  translation === ''){
+				headerChange(true);
+				return;
+			}
+			let newWordDiv = document.createElement('div');
+			newWordDiv.style.display = "flex";
+			let indexDiv = document.createElement('div');
+			let index = document.getElementById('words').childElementCount + 1;
+			indexDiv.innerHTML = index + ".";
+			indexDiv.style.width = "9%";
+			indexDiv.style.padding = ".25% 0 .25% 9%"
+			let characterDiv = document.createElement('div');
+			characterDiv.innerHTML = character;
+			characterDiv.style.width = "15.7%";
+			let pronounciationDiv = document.createElement('div');
+			pronounciationDiv.innerHTML = pronounciation;
+			pronounciationDiv.style.width = "30.7%";
+			let translationDiv = document.createElement('div');
+			translationDiv.innerHTML = translation;
+			translationDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteEntry(this);
+			};
+			newWordDiv.id = index;
+			newWordDiv.appendChild(indexDiv);
+			newWordDiv.appendChild(characterDiv);
+			newWordDiv.appendChild(pronounciationDiv);
+			newWordDiv.appendChild(translationDiv);
+			newWordDiv.appendChild(editButton);
+			newWordDiv.appendChild(deleteButton);
+			let words = document.getElementById("words");
+			words.appendChild(newWordDiv);
+			<!-- document.getElementById("inputCharacter").value = ""; -->
+			<!-- document.getElementById("inputPronounciation").value = ""; -->
+			<!-- document.getElementById("inputTranslation").value = ""; -->
+			headerChange(false);
+			document.getElementById("inputCharacter").focus();
+		}
+		
+		function headerChange(breakCheck){
+			let headerText = document.getElementById('headerText');
+			if(breakCheck){
+				headerText.innerHTML = "Invalid entry! Please completely fill out the entries.";
+				headerText.style.color = "red";
+				headerText.style.display = "block";
+				document.getElementById("headerBreak").style.display = "none";
+			}else{
+				let length = document.getElementById('words').childElementCount;
+				if(length == 0){
+					headerText.innerHTML = "The word bank is currently empty.";
+					headertText.style.color = "black";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+				}else{
+					headerText.style.display = "none";
+					document.getElementById("headerBreak").style.display = "block";
+				}
+			}
+		}
+		
+		function editEntry(buttonNode){
+			let words = document.getElementById("words").childNodes;
+			let index = parseInt(buttonNode.parentNode.id)-1;
+			let entry = words[index].childNodes;
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
+			indexDiv.style.width = "9%";
+			indexDiv.style.padding = ".25% 0 .25% 9%";
+			let character = entry[1].innerHTML;
+			let characterDiv = document.createElement('input');
+			characterDiv.form = "text";
+			characterDiv.value = character;
+			characterDiv.style.width = "14%";
+			characterDiv.style.marginRight = "1%";
+			let pronounciation = entry[2].innerHTML;
+			let pronounciationDiv = document.createElement('input');
+			pronounciationDiv.form = "text";
+			pronounciationDiv.value = pronounciation;
+			pronounciationDiv.style.width = "29%";
+			pronounciationDiv.style.marginRight = "1%";
+			let translation = entry[3].innerHTML;
+			let translationDiv = document.createElement('input');
+			translationDiv.form = "text";
+			translationDiv.value = translation;
+			translationDiv.style.width = "18%";
+			translationDiv.style.marginRight = ".2%";
+			let exitButton = document.createElement('button');
+			exitButton.innerHTML = "Exit edit";
+			exitButton.style.margin = ".25% .5%";
+			exitButton.onclick = function(){
+				exitEntry(index);
+			};
+			let saveButton = document.createElement('button');
+			saveButton.innerHTML = "Save Change";
+			saveButton.style.margin = ".25% .5%";
+			saveButton.onclick = function(){
+				saveEntry(index);
+			};
+			prevObj[index] = {};
+			prevObj[index]["character"] = entry[1].innerHTML;
+			prevObj[index]["pronounciation"] = entry[2].innerHTML;
+			prevObj[index]["translation"] = entry[3].innerHTML;
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(characterDiv);
+			words[index].appendChild(pronounciationDiv);
+			words[index].appendChild(translationDiv);
+			words[index].appendChild(exitButton);
+			words[index].appendChild(saveButton);
+		}
+		
+		function exitEntry(index){
+			let words = document.getElementById("words").childNodes;
+			let entry = words[index].childNodes;
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
+			indexDiv.style.width = "9%";
+			indexDiv.style.padding = ".25% 0 .25% 9%";
+			let characterDiv = document.createElement('div');
+			characterDiv.innerHTML = prevObj[index].character;
+			characterDiv.style.width = "15.7%";
+			let pronounciationDiv = document.createElement('div');
+			pronounciationDiv.innerHTML = prevObj[index].pronounciation;
+			pronounciationDiv.style.width = "30.7%";
+			let translationDiv = document.createElement('div');
+			translationDiv.innerHTML = prevObj[index].translation;
+			translationDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteEntry(this);
+			};
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(characterDiv);
+			words[index].appendChild(pronounciationDiv);
+			words[index].appendChild(translationDiv);
+			words[index].appendChild(editButton);
+			words[index].appendChild(deleteButton);
+			headerChange(false);
+		}
+		
+		function saveEntry(index){
+			let words = document.getElementById("words").childNodes;
+			let entry = words[index].childNodes;
+			if(entry[1].value == "" || entry[2].value == "" || entry[3].value == ""){
+				headerChange(true);
+				return;
+			}
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1;
+			indexDiv.style.width = "9%";
+			indexDiv.style.padding = ".25% 0 .25% 9%";
+			let characterDiv = document.createElement('div');
+			characterDiv.innerHTML = entry[1].value;
+			characterDiv.style.width = "15.7%";
+			let pronounciationDiv = document.createElement('div');
+			pronounciationDiv.innerHTML = entry[2].value;
+			pronounciationDiv.style.width = "30.7%";
+			let translationDiv = document.createElement('div');
+			translationDiv.innerHTML = entry[3].value;
+			translationDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteButton(this);
+			};
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(characterDiv);
+			words[index].appendChild(pronounciationDiv);
+			words[index].appendChild(translationDiv);
+			words[index].appendChild(editButton);
+			words[index].appendChild(deleteButton);
+		}
+		
+		function deleteEntry(entry){
+			let tempEntry = entry.parentNode.parentNode;
+			let index = parseInt(entry.parentNode.id);
+			do{
+				let indexDiv = tempEntry.childNodes[index].childNodes[0];
+				indexDiv.innerHTML = parseInt(index) + ".";
+				indexDiv.parentNode.id = index;
+				++index;
+			}while(tempEntry.childNodes[index]);
+			entry.parentNode.parentNode.removeChild(entry.parentNode);
+		}
+		
+		function createBank(){
+			let characterArray = [];
+		}
+		
+	</script>
+	<body>
+		<div>
+			<div>
+				<div>
+					<div style = "padding: 5px 0px 5px; text-align: center">
+						Create your own word bank
+					</div>
+					<div class ='break'>
+					</div>
+					<div class = 'input' style = "text-align: center">
+						Title of Word Bank: <input form = "text" />
+					</div>
+					<div style = "display: flex; padding-left: 20.63%">
+						<div class = 'inputContainer'>
+							Character: <input id = 'inputCharacter'  form = "text"/>
+						</div>
+						<div class = 'inputContainer'>
+							Pronounciation: <input id = 'inputPronounciation' form = "text" />
+						</div>
+						<div class = 'inputContainer'>
+							English Translation: <input id = 'inputTranslation' form = "text" />
+						</div>
+						<div style = " padding: 5px 0px 5px">
+							<button onClick = "insertWord()" style = "margin-right: 10px">
+								Enter
+							</button>
+							<button onClick = "createBank()" style = "margin-right: 10px">
+								Submit
+							</button>
+						</div>
+					</div>						
+				</div>
+				<div id = "bankContainer" style = "justify-content: center; display: flex">
+					<div id = "bank" style = "border:1px solid; padding:10px; margin : 5px; width: 1100px">
+						<div id = "headerContainer" style = "font-style: italic; width: 100%">
+							<div id = "headerText">
+								The word bank is currently empty.
+							</div>
+							<div id = "headerBreak" style = "display: none">
+								<br />
+							</div>
+						</div>
+						<div id = "words" style = "font-size: 18pt"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+		</script>
+	</body>
+</html>
