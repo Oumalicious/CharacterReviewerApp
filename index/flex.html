@@ -1,0 +1,817 @@
+<!DOCTYPE HTML>
+<!-- Name: Vincent Xue -->
+<html>
+	<head>
+		<title>
+			CISC 4900 Word Bank Creator
+		</title>
+	</head>
+	<style>
+		.inputContainer{
+			padding: 5px 20px 5px 0px;
+		}
+		
+		.choiceContainer{
+			padding: 5px 10px 5px 10px
+		}
+		
+		#uiContainer > div{
+			
+		}
+	</style>
+	<script>
+		//variable handler for canceling edits
+		var prevObj = {};
+		var wordBanksUsed = {};
+		var wordBanksAdded = {};
+		var wordBanksUsedStr = "";
+		var studentSheet = {};
+		var answerSheet = {};
+		var incorrectSheet = {};
+		var pronounciationChoices, translationChoices;
+		var testSheet, testIndex, score, maxScore;
+		var selectedOrigin, selectedInsertion, selectedInnervation, selectedAction;
+		//take user parameters to create an entry
+		function insertWord(muscle, origin, insertion, innervation, action){
+			//alert user if missing parameter
+			if(muscle == "" || origin == "" ||  insertion == "" || innervation == "" || action == ""){
+				headerChange(0);
+				return;
+			}
+			//create DOM elements with the value of the inputs
+			let newWordDiv = document.createElement('div');
+			newWordDiv.style.display = "flex";
+			let indexDiv = document.createElement('div');
+			let index = document.getElementById('words').childElementCount + 1;
+			indexDiv.innerHTML = index + ".";
+			indexDiv.style.width = "4%";
+			indexDiv.style.padding = ".25% 0 .25% 1%"
+			let muscleDiv = document.createElement('div');
+			muscleDiv.innerHTML = muscle;
+			muscleDiv.style.width = "15.7%";
+			let originDiv = document.createElement('div');
+			originDiv.innerHTML = origin;
+			originDiv.style.width = "30.7%";
+			let insertionDiv = document.createElement('div');
+			insertionDiv.innerHTML = insertion;
+			insertionDiv.style.width = "27.273%";
+			let innervationDiv = document.createElement('div');
+			innervationDiv.innerHTML = innervation;
+			innervationDiv.style.width = "27.273%";
+			let actionDiv = document.createElement('div');
+			actionDiv.innerHTML = action;
+			actionDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			//create buttons with parameters of the inputted fields
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteEntry(this);
+			};
+			//append elements to bank
+			newWordDiv.id = index;
+			newWordDiv.appendChild(indexDiv);
+			newWordDiv.appendChild(muscleDiv);
+			newWordDiv.appendChild(originDiv);
+			newWordDiv.appendChild(insertionDiv);
+			newWordDiv.appendChild(innervationDiv);
+			newWordDiv.appendChild(actionDiv);
+			newWordDiv.appendChild(editButton);
+			newWordDiv.appendChild(deleteButton);
+			let words = document.getElementById("words");
+			words.appendChild(newWordDiv);
+			//reset values and change focus for efficiency
+			document.getElementById("inputMuscle").value = "";
+			document.getElementById("inputOrigin").value = "";
+			document.getElementById("inputInsertion").value = "";
+			document.getElementById("inputInnervation").value = "";
+			document.getElementById("inputAction").value = "";
+			headerChange(1);
+			document.getElementById("inputMuscle").focus();
+		}
+		
+		//text to indicate changes/note about the word bank
+		function headerChange(number){
+			let headerText = document.getElementById('headerText');
+			switch(number){
+				//missing field
+				case 0:
+					headerText.innerHTML = "Invalid entry! Please completely fill out the entries.";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+					break;
+				//no words
+				case 1:
+					let length = document.getElementById('words').childElementCount;
+					if(length == 0){
+						headerText.innerHTML = "The word bank is currently empty.";
+						headertText.style.color = "black";
+						headerText.style.display = "block";
+						document.getElementById("headerBreak").style.display = "none";
+					}else{
+						headerText.style.display = "none";
+						document.getElementById("headerBreak").style.display = "block";
+					}
+					break;
+				//no word bank title
+				case 2:
+					headerText.innerHTML = "Word bank is missing a title!";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+			}
+		}
+		
+		//turn div into input fields
+		function editEntry(buttonNode){
+			let words = document.getElementById("words").childNodes;
+			let index = parseInt(buttonNode.parentNode.id)-1;
+			let entry = words[index].childNodes;
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
+			indexDiv.style.width = "4%";
+			indexDiv.style.padding = ".25% 0 .25% 1%";
+			let muscle = entry[1].innerHTML;
+			let muscleDiv = document.createElement('input');
+			muscleDiv.form = "text";
+			muscleDiv.value = muscle;
+			muscleDiv.style.width = "14%";
+			muscleDiv.style.marginRight = "1%";
+			let origin = entry[2].innerHTML;
+			let originDiv = document.createElement('input');
+			originDiv.form = "text";
+			originDiv.value = origin;
+			originDiv.style.width = "29%";
+			originDiv.style.marginRight = "1%";
+			let insertion = entry[3].innerHTML;
+			let insertionDiv = document.createElement('input');
+			insertionDiv.form = "text";
+			insertionDiv.value = insertion;
+			insertionDiv.style.width = "18%";
+			insertionDiv.style.marginRight = ".2%";
+			let innervation = entry[4].innerHTML;
+			let innervationDiv = document.createElement('input');
+			innervationDiv.form = "text";
+			innervationDiv.value = innervation;
+			innervationDiv.style.width = "18%";
+			innervationDiv.style.marginRight = ".2%";
+			let action = entry[5].innerHTML;
+			let actionDiv = document.createElement('input');
+			actionDiv.form = "text";
+			actionDiv.value = action;
+			actionDiv.style.width = "18%";
+			actionDiv.style.marginRight = ".2%";
+			let exitButton = document.createElement('button');
+			exitButton.innerHTML = "Exit edit";
+			exitButton.style.margin = ".25% .5%";
+			exitButton.onclick = function(){
+				exitEntry(index);
+			};
+			let saveButton = document.createElement('button');
+			saveButton.innerHTML = "Save Change";
+			saveButton.style.margin = ".25% .5%";
+			saveButton.onclick = function(){
+				saveEntry(index);
+			};
+			prevObj[index] = {};
+			prevObj[index]["muscle"] = entry[1].innerHTML;
+			prevObj[index]["origin"] = entry[2].innerHTML;
+			prevObj[index]["insertion"] = entry[3].innerHTML;
+			prevObj[index]["innervation"] = entry[4].innerHTML;
+			prevObj[index]["action"] = entry[5].innerHTML;
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(muscleDiv);
+			words[index].appendChild(originDiv);
+			words[index].appendChild(insertionDiv);
+			words[index].appendChild(innervationDiv);
+			words[index].appendChild(actionDiv);
+			words[index].appendChild(exitButton);
+			words[index].appendChild(saveButton);
+		}
+		
+		//turn input fields into divs and revert to old value
+		function exitEntry(index){
+			let words = document.getElementById("words").childNodes;
+			let entry = words[index].childNodes;
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
+			indexDiv.style.width = "4%";
+			indexDiv.style.padding = ".25% 0 .25% 1%";
+			let muscleDiv = document.createElement('div');
+			muscleDiv.innerHTML = prevObj[index].muscle;
+			muscleDiv.style.width = "15.7%";
+			let originDiv = document.createElement('div');
+			originDiv.innerHTML = prevObj[index].origin;
+			originDiv.style.width = "30.7%";
+			let insertionDiv = document.createElement('div');
+			insertionDiv.innerHTML = prevObj[index].insertion;
+			insertionDiv.style.width = "27.273%";
+			let innervationDiv = document.createElement('div');
+			innervationDiv.innerHTML = prevObj[index].innervation;
+			innervationDiv.style.width = "27.273%";
+			let actionDiv = document.createElement('div');
+			actionDiv.innerHTML = prevObj[index].action;
+			actionDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteEntry(this);
+			};
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(muscleDiv);
+			words[index].appendChild(originDiv);
+			words[index].appendChild(insertionDiv);
+			words[index].appendChild(innervationDiv);
+			words[index].appendChild(actionDiv);
+			words[index].appendChild(editButton);
+			words[index].appendChild(deleteButton);
+			headerChange(1);
+		}
+		
+		//turn input fields into divs with new value
+		function saveEntry(index){
+			let words = document.getElementById("words").childNodes;
+			let entry = words[index].childNodes;
+			if(entry[1].value == "" || entry[2].value == "" || entry[3].value == "" || entry[4].value == "" || entry[5].value == ""){
+				headerChange(0);
+				return;
+			}
+			let indexDiv = document.createElement('div');
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
+			indexDiv.style.width = "4%";
+			indexDiv.style.padding = ".25% 0 .25% 1%";
+			let muscleDiv = document.createElement('div');
+			muscleDiv.innerHTML = entry[1].value;
+			muscleDiv.style.width = "15.7%";
+			let originDiv = document.createElement('div');
+			originDiv.innerHTML = entry[2].value;
+			originDiv.style.width = "30.7%";
+			let insertionDiv = document.createElement('div');
+			insertionDiv.innerHTML = entry[3].value;
+			insertionDiv.style.width = "27.273%";
+			let innervationDiv = document.createElement('div');
+			innervationDiv.innerHTML = entry[4].value;
+			innervationDiv.style.width = "27.273%";
+			let actionDiv = document.createElement('div');
+			actionDiv.innerHTML = entry[5].value;
+			actionDiv.style.width = "27.273%";
+			let editButton = document.createElement('button');
+			editButton.innerHTML = "Edit";
+			editButton.style.margin = ".25% 0";
+			editButton.onclick = function(){
+				editEntry(this);
+			};
+			let deleteButton = document.createElement('button');
+			deleteButton.innerHTML = "Delete";
+			deleteButton.style.margin = ".25% 0";
+			deleteButton.onclick = function(){
+				deleteButton(this);
+			};
+			const divCollection = Array.from(entry);
+			while(divCollection.length > 0){
+				entry[0].parentNode.removeChild(entry[0]);
+				divCollection.pop();
+			}
+			words[index].appendChild(indexDiv);
+			words[index].appendChild(muscleDiv);
+			words[index].appendChild(originDiv);
+			words[index].appendChild(insertionDiv);
+			words[index].appendChild(innervationDiv);
+			words[index].appendChild(actionDiv);
+			words[index].appendChild(editButton);
+			words[index].appendChild(deleteButton);
+		}
+		
+		//decrement the index of every entry after the selected, then delete the selected entry
+		function deleteEntry(entry){
+			let tempEntry = entry.parentNode.parentNode;
+			let index = parseInt(entry.parentNode.id);
+			while(tempEntry.childNodes[index]){
+				let indexDiv = tempEntry.childNodes[index].childNodes[0];
+				indexDiv.innerHTML = parseInt(index) + ".";
+				indexDiv.parentNode.id = index;
+				++index;
+			}
+			entry.parentNode.parentNode.removeChild(entry.parentNode);
+		}
+		
+		//read all divs and turn it into a downloadable JSON object
+		//read all divs and turn it into a downloadable JSON object
+		function createBank(button){
+			let title = document.getElementById("bankTitle").value;
+			//prompt user if no title for word bank
+			if(title == ""){
+				headerChange(2);
+				return;
+			}
+			wordBanksUsed[title] = true;
+			let bankUsedDiv = document.createElement("div");
+			bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + title;
+			let wordsBanksUsedDiv = document.getElementById("wordBanksUsedDiv");
+			wordsBanksUsedDiv.appendChild(bankUsedDiv);
+			let wordBank = {};
+			wordBank[title] = {};
+			let words = document.getElementById("words").childNodes;
+			Array.prototype.forEach.call(words, function(entry){
+				wordBank[title][entry.childNodes[1].innerHTML] = {};
+				wordBank[title][entry.childNodes[1].innerHTML]["origin"] = entry.childNodes[2].innerHTML;
+				wordBank[title][entry.childNodes[1].innerHTML]["insertion"] = entry.childNodes[3].innerHTML;
+				wordBank[title][entry.childNodes[1].innerHTML]["innervation"] = entry.childNodes[4].innerHTML;
+				wordBank[title][entry.childNodes[1].innerHTML]["action"] = entry.childNodes[5].innerHTML;
+			});
+			let data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(wordBank));
+			let downloader = document.getElementById('download');
+			downloader.setAttribute("href", "data:" + data);
+			downloader.setAttribute("download", title + ".json");
+		}
+		
+		//read inputted JSON files
+		function onChange(event){
+			let banks = event.target.files;
+			for(let i = 0; i < banks.length; ++i){
+				let wordBankName = banks[i].name.substring(0,banks[i].name.length-5);
+				if(wordBanksUsed[wordBankName]){
+					continue;
+				}
+				let reader = new FileReader();
+				reader.onload = (function(event){
+					let obj = JSON.parse(event.target.result)[wordBankName];
+					Object.keys(obj).forEach(entry =>{
+							insertWord(entry, obj[entry].origin, obj[entry].insertion, obj[entry].innervation, obj[entry].action);
+							wordBanksUsed[wordBankName] = true;
+					});
+					let bankUsedDiv = document.createElement("div");
+					bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + wordBankName;
+					let wordsBanksUsedDiv = document.getElementById("wordBanksUsedDiv");
+					wordsBanksUsedDiv.appendChild(bankUsedDiv);
+				});
+				reader.readAsText(banks[i]);
+			}
+		}
+		
+		//lol stacks over flow ez
+		function shuffle(array) {
+			var currentIndex = Object.keys(array).length, temporaryValue, randomIndex;
+			while (0 !== currentIndex) {
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex -= 1;
+				temporaryValue = array[currentIndex];
+				array[currentIndex] = array[randomIndex];
+				array[randomIndex] = temporaryValue;
+			}
+			 return array;
+		}
+		
+		function startTest(){
+			let words = document.getElementById("words").childNodes;
+			document.getElementById("uiContainer").style.display = "none";
+			document.getElementById("bankUiContainer").style.display = "none";
+			document.getElementById("testContainer").style.display = "block";
+			originChoices = [];
+			insertionChoices = [];
+			innervationChoices = [];
+			actionChoices = [];
+			Object.keys(words).forEach(entry =>{
+				let muscle = words[entry].childNodes[1].innerHTML;
+				answerSheet[muscle] = {};
+				answerSheet[muscle]["origin"] = words[entry].childNodes[2].innerHTML;
+				originChoices.push(answerSheet[muscle]["origin"]);
+				answerSheet[muscle]["insertion"] = words[entry].childNodes[3].innerHTML;
+				insertionChoices.push(answerSheet[muscle]["insertion"]);
+				answerSheet[muscle]["innervation"] = words[entry].childNodes[4].innerHTML;
+				innervationChoices.push(answerSheet[muscle]["innervation"]);
+				answerSheet[muscle]["action"] = words[entry].childNodes[5].innerHTML;
+				actionChoices.push(answerSheet[muscle]["action"]);
+			})
+			testSheet = shuffle(Object.keys(answerSheet));
+			testIndex = 0;
+			score = 0;
+			maxScore = testSheet.length;
+			nextQuestion(testIndex);
+		}
+		
+		function nextQuestion(index){
+			if(!testSheet[index]){
+				calculateScore();
+				return;
+			}
+			let currentMuscle = document.getElementById("muscle");
+			currentMuscle.innerHTML = testSheet[index];
+			let currentOriginChoices = generateChoices(originChoices, "origin");
+			currentOriginChoices.push(answerSheet[testSheet[index]].origin);
+			shuffle(currentOriginChoices);
+			let originButtons = document.getElementById("ogChoiceContainer").children;
+			for(let i = 0; i < currentOriginChoices.length; ++i){
+				originButtons[i].children[0].innerHTML = currentOriginChoices[i];
+			}
+			let currentInsertionChoices = generateChoices(insertionChoices, "insertion");
+			currentInsertionChoices.push(answerSheet[testSheet[index]].insertion);
+			shuffle(currentInsertionChoices);
+			let insertionButtons = document.getElementById("insChoiceContainer").children;
+			for(let i = 0; i < currentInsertionChoices.length; ++i){
+				insertionButtons[i].children[0].innerHTML = currentInsertionChoices[i];
+			}
+			let currentInnervationChoices = generateChoices(innervationChoices, "innervation");
+			currentInnervationChoices.push(answerSheet[testSheet[index]].innervation);
+			shuffle(currentInnervationChoices);
+			let innervationButtons = document.getElementById("invChoiceContainer").children;
+			for(let i = 0; i < currentInnervationChoices.length; ++i){
+				innervationButtons[i].children[0].innerHTML = currentInnervationChoices[i];
+			}
+			let currentActionChoices = generateChoices(actionChoices, "action");
+			currentActionChoices.push(answerSheet[testSheet[index]].action);
+			shuffle(currentActionChoices);
+			let actionButtons = document.getElementById("acChoiceContainer").children;
+			for(let i = 0; i < currentActionChoices.length; ++i){
+				actionButtons[i].children[0].innerHTML = currentActionChoices[i];
+			}
+			
+		}
+		
+		function generateChoices(array, type){
+			array = shuffle(array);
+			let skip = false;
+			let choiceArray = [];
+			for(let i = 0; i < 3; i++){
+				if(skip){
+					choiceArray.push(array[i+1]);
+				}else{
+					let currentCharacter = document.getElementById("muscle").innerHTML;
+					if(array[i] == answerSheet[currentCharacter][type]){
+						choiceArray.push(array[i+1]);
+						skip = true;
+					}
+					else choiceArray.push(array[i]);
+				}
+			}
+			return choiceArray;
+		}
+		
+		function selectChoice(currentButton, type){
+			Array.prototype.forEach.call(currentButton.parentNode.parentNode.children, div =>{
+				div.children[0].style.color = "black";
+			});
+			window["selected" + type] = currentButton.innerHTML;
+			currentButton.style.color = "blue";
+			if(canNext()){
+				document.getElementById("nextButton").disabled = false;
+			}
+		}
+		
+		function finalizeChoice(){
+			let muscle = document.getElementById("muscle").innerHTML;
+			if(checkAnswer(muscle, "Origin") && checkAnswer(muscle, "Insertion") && checkAnswer(muscle, "Innervation") && checkAnswer(muscle, "Action")){
+				score++;
+			}else{
+				incorrectSheet[muscle] = {};
+				incorrectSheet[muscle]["origin"] = selectedOrigin;
+				incorrectSheet[muscle]["insertion"] = selectedInsertion;
+				incorrectSheet[muscle]["innervation"] = selectedInnervation;
+				incorrectSheet[muscle]["action"] = selectedAction;
+			}
+			studentSheet[muscle] = {};
+			studentSheet[muscle]["origin"] = selectedOrigin;
+			studentSheet[muscle]["insertion"] = selectedInsertion;
+			studentSheet[muscle]["innervation"] = selectedInnervation;
+			studentSheet[muscle]["action"] = selectedAction;
+			let ogChoiceContainer = document.getElementById("ogChoiceContainer").children;
+			Array.prototype.forEach.call(ogChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			let insChoiceContainer = document.getElementById("insChoiceContainer").children;
+			Array.prototype.forEach.call(insChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			let invChoiceContainer = document.getElementById("invChoiceContainer").children;
+			Array.prototype.forEach.call(invChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			let acChoiceContainer = document.getElementById("acChoiceContainer").children;
+			Array.prototype.forEach.call(acChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			selectedOrigin = "";
+			selectedInsertion = "";
+			selectedInnervation = "";
+			selectedAction = "";
+			document.getElementById("nextButton").disabled = true;
+			nextQuestion(++testIndex);
+		}
+		
+		function checkAnswer(muscle, type){
+			return window["selected" + type] == answerSheet[muscle][type.toLowerCase()];
+		}
+		
+		function canNext(){
+			return (selectedOrigin && selectedOrigin.length > 0 &&
+				selectedInsertion && selectedInsertion.length > 0 &&
+				selectedInnervation && selectedInnervation.length > 0 &&
+				selectedAction && selectedAction.length > 0);
+		}
+		
+		function calculateScore(){
+			let finalScore = score/maxScore * 100 + "%";
+			let fractionScore = score + "/" + maxScore;
+			document.getElementById("finalScore").innerHTML = finalScore;
+			document.getElementById("fractionScore").innerHTML = fractionScore;
+			var index = 0;
+			testSheet.forEach(muscle =>{
+				let userSheetContainer = document.getElementById("userSheetContainer");
+				appendToResults(userSheetContainer, studentSheet, muscle);
+				let answerSheetContainer = document.getElementById("answerSheetContainer");
+				appendToResults(answerSheetContainer, answerSheet, muscle);
+				if(studentSheet[muscle]["origin"] == answerSheet[muscle]["origin"] && studentSheet[muscle]["insertion"] == answerSheet[muscle]["insertion"] && studentSheet[muscle]["innervation"] == answerSheet[muscle]["innervation"] && studentSheet[muscle]["action"] == answerSheet[muscle]["action"]){
+					userSheetContainer.children[index].children[0].style.color = "green";
+					userSheetContainer.children[index].children[1].style.color = "green";
+					userSheetContainer.children[index].children[2].style.color = "green";
+					userSheetContainer.children[index].children[3].style.color = "green";
+					userSheetContainer.children[index].children[4].style.color = "green";
+				}else{
+					userSheetContainer.children[index].children[0].style.color = "red";
+					if(studentSheet[muscle]["origin"] != answerSheet[muscle]["origin"]){
+						userSheetContainer.children[index].children[1].style.color = "red";
+					}else userSheetContainer.children[index].children[1].style.color = "green";
+					if(studentSheet[muscle]["insertion"] != answerSheet[muscle]["insertion"]){
+						userSheetContainer.children[index].children[2].style.color = "red";
+					}else userSheetContainer.children[index].children[2].style.color = "green";
+					if(studentSheet[muscle]["innervation"] != answerSheet[muscle]["innervation"]){
+						userSheetContainer.children[index].children[3].style.color = "red";
+					}else userSheetContainer.children[index].children[3].style.color = "green";
+					if(studentSheet[muscle]["action"] != answerSheet[muscle]["action"]){
+						userSheetContainer.children[index].children[4].style.color = "red";
+					}else userSheetContainer.children[index].children[4].style.color = "green";
+				}
+				index++;
+			});
+			document.getElementById("testContainer").style.display = "none";
+			document.getElementById("resultContainer").style.display = "block";
+			Object.keys(incorrectSheet).forEach(muscle =>{
+				let incorrectSheetContainer = document.getElementById("incorrectSheetContainer");
+				appendToResults(incorrectSheetContainer, incorrectSheet, muscle);
+			});
+		}
+		
+		function appendToResults(container, sheet, muscle){
+			let divMuscle = document.createElement('div');
+			divMuscle.innerHTML = muscle;
+			divMuscle.style.width = "300px";
+			divMuscle.style.padding = "1% 0";
+			let divOrigin = document.createElement('div');
+			divOrigin.innerHTML = sheet[muscle]["origin"];
+			divOrigin.style.width = "300px";
+			divOrigin.style.padding = "1% 15%";
+			let divInsertion = document.createElement('div');
+			divInsertion.innerHTML = sheet[muscle]["insertion"];
+			divInsertion.style.width = "300px";
+			divInsertion.style.padding = "1% 15%";
+			let divInnervation = document.createElement('div');
+			divInnervation.innerHTML = sheet[muscle]["innervation"];
+			divInnervation.style.width = "300px";
+			divInnervation.style.padding = "1% 15%";
+			let divAction = document.createElement('div');
+			divAction.innerHTML = sheet[muscle]["action"];
+			divAction.style.width = "300px";
+			divAction.style.padding = "1% 15%";
+			let entryContainer = document.createElement('div');
+			entryContainer.append(divMuscle);
+			entryContainer.append(divOrigin);
+			entryContainer.append(divInsertion);
+			entryContainer.append(divInnervation);
+			entryContainer.append(divAction);
+			container.append(entryContainer);
+		}
+</script>
+	<body>
+		<div>
+			<div>
+				<div id = "uiContainer">
+					<div style = "border: 1px solid; border-color: red">
+						<div style = "padding: 5px 0px 5px; text-align: center">
+							Create your own word bank
+						</div>
+						<div class = 'input' style = "text-align: center; padding-right: 1%">
+							Title of Word Bank: <input id = "bankTitle" form = "text" />
+						</div>
+						<div style = "display: flex; justify-content: center; padding: 5px 0px 5px;">
+							<div style = "padding: 0 .5% 0 0;">
+								Select/Edit Banks:
+							</div>
+							<div>
+								<input type = "file" id = "jsonInputs" accepts = ".json" onClick= "this.value=null" multiple />
+							</div>
+							<div>
+								<button id = "editBankButton" onClick = "startTest()">
+									Start Test
+								</button>
+							</div>
+						</div>
+						<div style = "display: flex; padding-left: 13.63%">
+							<div class = 'inputContainer'>
+								Muscle: <input id = 'inputMuscle'  form = "text"/>
+							</div>
+							<div class = 'inputContainer'>
+								Origin: <input id = 'inputOrigin' form = "text" />
+							</div>
+							<div class = 'inputContainer'>
+								Insertion: <input id = 'inputInsertion' form = "text" />
+							</div>
+							<div class = 'inputContainer'>
+								Innervation: <input id = 'inputInnervation' form = "text" />
+							</div>
+							<div class = 'inputContainer'>
+								Action: <input id = 'inputAction' form = "text" />
+							</div>
+							<div style = " padding: 5px 0px 5px">
+								<button id = "enterButton" style = "margin-right: 10px">
+									Enter
+								</button>
+								<a id = "download">
+									<button id = "submitButton" type = "submit" onClick = "createBank()" style = "margin-right: 10px">
+										Submit
+									</button>
+								</a>
+							</div>
+						</div>
+					</div>
+					<div style = "display: flex; padding: 1% 0">
+						<div class = 'fieldContainer' style = "padding: .25% 2.8% .25% 24.5%">
+							Index
+						</div>
+						<div class = 'fieldContainer' style = "padding: .25% 3% .25% 1.5%">
+							Character
+						</div>
+						<div class = 'fieldContainer' style = "padding: .25% 6.5% .25% 3%">
+							Pronounciation
+						</div>
+						<div class = 'fieldContainer' style = "padding-left: 6.5%">
+							English Translation
+						</div>
+					</div>						
+				</div>
+				<div id = "bankUiContainer" style = "display: flex; justify-content: center">
+					<div id = "bankContainer" style = "justify-content: center; display: flex; padding-left: 9.4%">
+						<div id = "bank" style = "border:1px solid; padding:10px; margin : 5px; width: 1400px">
+							<div id = "headerContainer" style = "font-style: italic; width: 100%">
+								<div id = "headerText">
+									The word bank is currently empty.
+								</div>
+								<div id = "headerBreak" style = "display: none">
+									<br />
+								</div>
+							</div>
+							<div id = "words" style = "font-size: 14pt"></div>
+						</div>
+					</div>
+					<div>
+						<div style = "border:1px solid; padding:10px; margin: 5px 5px 5px 20px; width: 12%: height: auto">
+							<div style = "text-align: center">
+								Word Banks Used
+							</div>
+							<div id = "wordBanksUsedDiv">
+							</div>
+							<div class = "break">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div id = "testContainer" style = "display: none">
+					<div style = "justify-content: center;display: flex">
+						<div style = "border: 1px solid; padding 10px; margin: 5px 5px 5px 20px; width: 23%; height: 200px; text-align: center">
+							<div id = "muscle" style = "padding: 66px 0; font-size: 28pt; font-weight: bold">
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Origin
+						</div>
+						<div id = "ogChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Origin')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Origin')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Origin')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Origin')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Insertion
+						</div>
+						<div id = "insChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Insertion')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Insertion')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Insertion')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Insertion')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Innervation
+						</div>
+						<div id = "invChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Innervation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Innervation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Innervation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Innervation')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Action
+						</div>
+						<div id = "acChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Action')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Action')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Action')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Action')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 3% 5%; text-align: center;">
+						<div>
+							<button id = "nextButton" style = "font-size: 22pt" onClick = "finalizeChoice()" disabled>
+								Next
+							</button>
+						</div>
+					</div>
+				</div>
+				<div id = "resultContainer" style = "display: none; padding-left: 150px">
+					<div id = "finalScore" style = "text-align: center">
+					</div>
+					<div id = "fractionScore" style = "text-align: center">
+					</div>
+					<div id = "sheetFlexContainer" style = "justify-content: center; display: flex">
+						<div id = "userSheetContainer" style = "width: 450px">
+						</div>
+						<div id = "answerSheetContainer" style = "width: 450px">
+						</div>
+						<div id = "incorrectSheetContainer" style = "width: 500px">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			document.getElementById("jsonInputs").addEventListener('change', onChange);
+			document.getElementById("enterButton").onclick = function(){insertWord(document.getElementById("inputMuscle").value,					
+				document.getElementById("inputOrigin").value,
+				document.getElementById("inputInsertion").value,
+				document.getElementById("inputInnervation").value,
+				document.getElementById("inputAction").value)};
+		</script>
+	</body>
+</html>
