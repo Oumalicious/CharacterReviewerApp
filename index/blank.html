@@ -1,31 +1,44 @@
 <!DOCTYPE HTML>
-<!-- Name: asydgasdygasd -->
+<!-- Name: Vincent Xue -->
 <html>
 	<head>
 		<title>
-			CISC 4900
+			CISC 4900 Word Bank Creator
 		</title>
 	</head>
 	<style>
-		.break{
-			flex-basis: 100%;
-			height: 0;
-		}
-		
 		.inputContainer{
 			padding: 5px 20px 5px 0px;
 		}
+		
+		.choiceContainer{
+			padding: 5px 10px 5px 10px
+		}
+		
+		#uiContainer > div{
+			
+		}
 	</style>
 	<script>
+		//variable handler for canceling edits
 		var prevObj = {};
-		function insertWord(){
-			let character = document.getElementById("inputCharacter").value;
-			let pronounciation = document.getElementById("inputPronounciation").value;
-			let translation = document.getElementById("inputTranslation").value;
+		var wordBanksUsed = {};
+		var wordBanksAdded = {};
+		var wordBanksUsedStr = "";
+		var studentSheet = {};
+		var answerSheet = {};
+		var incorrectSheet = {};
+		var pronounciationChoices, translationChoices;
+		var testSheet, testIndex, score, maxScore;
+		var selectedPronounciation, selectedTranslation;
+		//take user parameters to create an entry
+		function insertWord(character, pronounciation, translation){
+			//alert user if missing parameter
 			if(character === '' || pronounciation === '' ||  translation === ''){
-				headerChange(true);
+				headerChange(0);
 				return;
 			}
+			//create DOM elements with the value of the inputs
 			let newWordDiv = document.createElement('div');
 			newWordDiv.style.display = "flex";
 			let indexDiv = document.createElement('div');
@@ -45,6 +58,7 @@
 			let editButton = document.createElement('button');
 			editButton.innerHTML = "Edit";
 			editButton.style.margin = ".25% 0";
+			//create buttons with parameters of the inputted fields
 			editButton.onclick = function(){
 				editEntry(this);
 			};
@@ -54,6 +68,7 @@
 			deleteButton.onclick = function(){
 				deleteEntry(this);
 			};
+			//append elements to bank
 			newWordDiv.id = index;
 			newWordDiv.appendChild(indexDiv);
 			newWordDiv.appendChild(characterDiv);
@@ -63,34 +78,48 @@
 			newWordDiv.appendChild(deleteButton);
 			let words = document.getElementById("words");
 			words.appendChild(newWordDiv);
-			<!-- document.getElementById("inputCharacter").value = ""; -->
-			<!-- document.getElementById("inputPronounciation").value = ""; -->
-			<!-- document.getElementById("inputTranslation").value = ""; -->
-			headerChange(false);
+			//reset values and change focus for efficiency
+			document.getElementById("inputCharacter").value = "";
+			document.getElementById("inputPronounciation").value = "";
+			document.getElementById("inputTranslation").value = "";
+			headerChange(1);
 			document.getElementById("inputCharacter").focus();
 		}
 		
-		function headerChange(breakCheck){
+		//text to indicate changes/note about the word bank
+		function headerChange(number){
 			let headerText = document.getElementById('headerText');
-			if(breakCheck){
-				headerText.innerHTML = "Invalid entry! Please completely fill out the entries.";
-				headerText.style.color = "red";
-				headerText.style.display = "block";
-				document.getElementById("headerBreak").style.display = "none";
-			}else{
-				let length = document.getElementById('words').childElementCount;
-				if(length == 0){
-					headerText.innerHTML = "The word bank is currently empty.";
-					headertText.style.color = "black";
+			switch(number){
+				//missing field
+				case 0:
+					headerText.innerHTML = "Invalid entry! Please completely fill out the entries.";
+					headerText.style.color = "red";
 					headerText.style.display = "block";
 					document.getElementById("headerBreak").style.display = "none";
-				}else{
-					headerText.style.display = "none";
-					document.getElementById("headerBreak").style.display = "block";
-				}
+					break;
+				//no words
+				case 1:
+					let length = document.getElementById('words').childElementCount;
+					if(length == 0){
+						headerText.innerHTML = "The word bank is currently empty.";
+						headertText.style.color = "black";
+						headerText.style.display = "block";
+						document.getElementById("headerBreak").style.display = "none";
+					}else{
+						headerText.style.display = "none";
+						document.getElementById("headerBreak").style.display = "block";
+					}
+					break;
+				//no word bank title
+				case 2:
+					headerText.innerHTML = "Word bank is missing a title!";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
 			}
 		}
 		
+		//turn div into input fields
 		function editEntry(buttonNode){
 			let words = document.getElementById("words").childNodes;
 			let index = parseInt(buttonNode.parentNode.id)-1;
@@ -146,6 +175,7 @@
 			words[index].appendChild(saveButton);
 		}
 		
+		//turn input fields into divs and revert to old value
 		function exitEntry(index){
 			let words = document.getElementById("words").childNodes;
 			let entry = words[index].childNodes;
@@ -185,18 +215,19 @@
 			words[index].appendChild(translationDiv);
 			words[index].appendChild(editButton);
 			words[index].appendChild(deleteButton);
-			headerChange(false);
+			headerChange(1);
 		}
 		
+		//turn input fields into divs with new value
 		function saveEntry(index){
 			let words = document.getElementById("words").childNodes;
 			let entry = words[index].childNodes;
 			if(entry[1].value == "" || entry[2].value == "" || entry[3].value == ""){
-				headerChange(true);
+				headerChange(0);
 				return;
 			}
 			let indexDiv = document.createElement('div');
-			indexDiv.innerHTML = parseInt(index) + 1;
+			indexDiv.innerHTML = parseInt(index) + 1 + ".";
 			indexDiv.style.width = "9%";
 			indexDiv.style.padding = ".25% 0 .25% 9%";
 			let characterDiv = document.createElement('div');
@@ -233,71 +264,410 @@
 			words[index].appendChild(deleteButton);
 		}
 		
+		//decrement the index of every entry after the selected, then delete the selected entry
 		function deleteEntry(entry){
 			let tempEntry = entry.parentNode.parentNode;
 			let index = parseInt(entry.parentNode.id);
-			do{
+			while(tempEntry.childNodes[index]){
 				let indexDiv = tempEntry.childNodes[index].childNodes[0];
 				indexDiv.innerHTML = parseInt(index) + ".";
 				indexDiv.parentNode.id = index;
 				++index;
-			}while(tempEntry.childNodes[index]);
+			}
 			entry.parentNode.parentNode.removeChild(entry.parentNode);
 		}
 		
-		function createBank(){
-			let characterArray = [];
+		//read all divs and turn it into a downloadable JSON object
+		function createBank(button){
+			let title = document.getElementById("bankTitle").value;
+			//prompt user if no title for word bank
+			if(title == ""){
+				headerChange(2);
+				return;
+			}
+			wordBanksUsed[title] = true;
+			let bankUsedDiv = document.createElement("div");
+			bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + title;
+			let wordsBanksUsedDiv = document.getElementById("wordBanksUsedDiv");
+			wordsBanksUsedDiv.appendChild(bankUsedDiv);
+			let wordBank = {};
+			wordBank[title] = {};
+			let words = document.getElementById("words").childNodes;
+			Array.prototype.forEach.call(words, function(entry){
+				wordBank[title][entry.childNodes[1].innerHTML] = {};
+				wordBank[title][entry.childNodes[1].innerHTML]["pronounciation"] = entry.childNodes[2].innerHTML;
+				wordBank[title][entry.childNodes[1].innerHTML]["translation"] = entry.childNodes[3].innerHTML;
+			});
+			let data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(wordBank));
+			let downloader = document.getElementById('download');
+			downloader.setAttribute("href", "data:" + data);
+			downloader.setAttribute("download", title + ".json");
 		}
 		
-	</script>
+		//read inputted JSON files
+		function onChange(event){
+			let banks = event.target.files;
+			for(let i = 0; i < banks.length; ++i){
+				let wordBankName = banks[i].name.substring(0,banks[i].name.length-5);
+				if(wordBanksUsed[wordBankName]){
+					continue;
+				}
+				let reader = new FileReader();
+				reader.onload = (function(event){
+					let obj = JSON.parse(event.target.result)[wordBankName];
+					Object.keys(obj).forEach(entry =>{
+							insertWord(entry, obj[entry].pronounciation, obj[entry].translation);
+							wordBanksUsed[wordBankName] = true;
+					});
+					let bankUsedDiv = document.createElement("div");
+					bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + wordBankName;
+					let wordsBanksUsedDiv = document.getElementById("wordBanksUsedDiv");
+					wordsBanksUsedDiv.appendChild(bankUsedDiv);
+				});
+				reader.readAsText(banks[i]);
+			}
+		}
+		
+		//lol stacks over flow ez
+		function shuffle(array) {
+			var currentIndex = Object.keys(array).length, temporaryValue, randomIndex;
+			while (0 !== currentIndex) {
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex -= 1;
+				temporaryValue = array[currentIndex];
+				array[currentIndex] = array[randomIndex];
+				array[randomIndex] = temporaryValue;
+			}
+			 return array;
+		}
+		
+		function startTest(){
+			let words = document.getElementById("words").childNodes;
+			document.getElementById("uiContainer").style.display = "none";
+			document.getElementById("bankUiContainer").style.display = "none";
+			document.getElementById("testContainer").style.display = "block";
+			pronounciationChoices = [];
+			translationChoices = [];
+			Object.keys(words).forEach(entry =>{
+				let character = words[entry].childNodes[1].innerHTML;
+				answerSheet[character] = {};
+				answerSheet[character]["pronounciation"] = words[entry].childNodes[2].innerHTML;
+				pronounciationChoices.push(answerSheet[character]["pronounciation"]);
+				answerSheet[character]["translation"] = words[entry].childNodes[3].innerHTML;
+				translationChoices.push(answerSheet[character]["translation"]);
+			})
+			testSheet = shuffle(Object.keys(answerSheet));
+			testIndex = 0;
+			score = 0;
+			maxScore = testSheet.length;
+			nextQuestion(testIndex);
+		}
+		
+		function nextQuestion(index){
+			if(!testSheet[index]){
+				calculateScore();
+				return;
+			}
+			let currentCharacter = document.getElementById("character");
+			currentCharacter.innerHTML = testSheet[index];
+			let currentPronounciationChoices = generateChoices(pronounciationChoices, "pronounciation");
+			currentPronounciationChoices.push(answerSheet[testSheet[index]].pronounciation);
+			shuffle(currentPronounciationChoices);
+			let pronounciationButtons = document.getElementById("prChoiceContainer").children;
+			for(let i = 0; i < currentPronounciationChoices.length; ++i){
+				pronounciationButtons[i].children[0].innerHTML = currentPronounciationChoices[i];
+			}
+			let currentTranslationChoices = generateChoices(translationChoices, "translation");
+			currentTranslationChoices.push(answerSheet[testSheet[index]].translation);
+			shuffle(currentTranslationChoices);
+			let translationButtons = document.getElementById("tlChoiceContainer").children;
+			for(let i = 0; i < currentTranslationChoices.length; ++i){
+				translationButtons[i].children[0].innerHTML = currentTranslationChoices[i];
+			}
+		}
+		
+		function generateChoices(array, type){
+			array = shuffle(array);
+			let skip = false;
+			let choiceArray = [];
+			for(let i = 0; i < 3; i++){
+				if(skip){
+					choiceArray.push(array[i+1]);
+				}else{
+					let currentCharacter = document.getElementById("character").innerHTML;
+					if(array[i] == answerSheet[currentCharacter][type]){
+						choiceArray.push(array[i+1]);
+						skip = true;
+					}
+					else choiceArray.push(array[i]);
+				}
+			}
+			return choiceArray;
+		}
+		
+		function selectChoice(currentButton, type){
+			Array.prototype.forEach.call(currentButton.parentNode.parentNode.children, div =>{
+				div.children[0].style.color = "black";
+			});
+			window["selected" + type] = currentButton.innerHTML;
+			currentButton.style.color = "blue";
+			if(canNext()){
+				document.getElementById("nextButton").disabled = false;
+			}
+		}
+		
+		function finalizeChoice(){
+			let character = document.getElementById("character").innerHTML;
+			if(answerSheet[character]["pronounciation"] == selectedPronounciation && answerSheet[character]["translation"] == selectedTranslation){
+				score++;
+			}else{
+				incorrectSheet[character] = {};
+				incorrectSheet[character]["pronounciation"] = selectedPronounciation;
+				incorrectSheet[character]["translation"] = selectedTranslation
+			}
+			studentSheet[character] = {};
+			studentSheet[character]["pronounciation"] = selectedPronounciation;
+			studentSheet[character]["translation"] = selectedTranslation;
+			let prChoiceContainer = document.getElementById("prChoiceContainer").children;
+			Array.prototype.forEach.call(prChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			let tlChoiceContainer = document.getElementById("tlChoiceContainer").children;
+			Array.prototype.forEach.call(tlChoiceContainer, div =>{
+				div.children[0].style.color = "black";
+			});
+			selectedPronounciation = "";
+			selectedTranslation = "";
+			document.getElementById("nextButton").disabled = true;
+			nextQuestion(++testIndex);
+		}
+		
+		function canNext(){
+			return (selectedPronounciation && selectedPronounciation.length > 0 &&
+				selectedTranslation && selectedTranslation.length > 0);
+		}
+		
+		function calculateScore(){
+			let finalScore = score/maxScore * 100 + "%";
+			let fractionScore = score + "/" + maxScore;
+			document.getElementById("finalScore").innerHTML = finalScore;
+			document.getElementById("fractionScore").innerHTML = fractionScore;
+			var index = 0;
+			testSheet.forEach(character =>{
+				let userSheetContainer = document.getElementById("userSheetContainer");
+				appendToResults(userSheetContainer, studentSheet, character);
+				let answerSheetContainer = document.getElementById("answerSheetContainer");
+				appendToResults(answerSheetContainer, answerSheet, character);
+				if(studentSheet[character]["pronounciation"] == answerSheet[character]["pronounciation"] && studentSheet[character]["translation"] == answerSheet[character]["translation"]){
+					userSheetContainer.children[index].children[0].style.color = "green";
+					userSheetContainer.children[index].children[1].style.color = "green";
+					userSheetContainer.children[index].children[2].style.color = "green";
+				}else{
+					userSheetContainer.children[index].children[0].style.color = "red";
+					if(studentSheet[character]["pronounciation"] == answerSheet[character]["pronounciation"]){
+						userSheetContainer.children[index].children[1].style.color = "green";
+						userSheetContainer.children[index].children[2].style.color = "red";
+					}else if(studentSheet[character]["translation"] == answerSheet[character]["translation"]){
+						userSheetContainer.children[index].children[1].style.color = "red";
+						userSheetContainer.children[index].children[2].style.color = "green";
+					}else{
+						userSheetContainer.children[index].children[1].style.color = "red";
+						userSheetContainer.children[index].children[2].style.color = "red";
+					}
+				}
+				index++;
+			});
+			document.getElementById("testContainer").style.display = "none";
+			document.getElementById("resultContainer").style.display = "block";
+			Object.keys(incorrectSheet).forEach(character =>{
+				let incorrectSheetContainer = document.getElementById("incorrectSheetContainer");
+				appendToResults(incorrectSheetContainer, incorrectSheet, character);
+			});
+		}
+		
+		function appendToResults(container, sheet, character){
+			let divCharacter = document.createElement('div');
+			divCharacter.innerHTML = character;
+			divCharacter.style.width = "300px";
+			divCharacter.style.padding = "1% 0";
+			let divPronounciation = document.createElement('div');
+			divPronounciation.innerHTML = sheet[character].pronounciation;
+			divPronounciation.style.width = "300px";
+			divPronounciation.style.padding = "1% 15%";
+			let divTranslation = document.createElement('div');
+			divTranslation.innerHTML = sheet[character]["translation"];
+			divTranslation.style.width = "300px";
+			divTranslation.style.padding = "1% 15%";
+			let entryContainer = document.createElement('div');
+			entryContainer.append(divCharacter);
+			entryContainer.append(divPronounciation);
+			entryContainer.append(divTranslation);
+			container.append(entryContainer);
+		}
+</script>
 	<body>
 		<div>
 			<div>
-				<div>
-					<div style = "padding: 5px 0px 5px; text-align: center">
-						Create your own word bank
-					</div>
-					<div class ='break'>
-					</div>
-					<div class = 'input' style = "text-align: center">
-						Title of Word Bank: <input form = "text" />
-					</div>
-					<div style = "display: flex; padding-left: 20.63%">
-						<div class = 'inputContainer'>
-							Character: <input id = 'inputCharacter'  form = "text"/>
+				<div id = "uiContainer">
+					<div style = "display: flex; justify-content: center; padding-top: .5%">
+						<div style = "border: 2px solid; border-color: red; padding: 1%">
+							<div style = "padding: 5px 0px 5px; text-align: center">
+								Create your own word bank
+							</div>
+							<div class = 'input' style = "text-align: center; padding-right: 1%">
+								Title of Word Bank: <input id = "bankTitle" form = "text" />
+							</div>
+							<div style = "display: flex; justify-content: center; padding: 5px 0px 5px;">
+								<div style = "padding: 0 .5% 0 0;">
+									Select/Edit Banks:
+								</div>
+								<div>
+									<input type = "file" id = "jsonInputs" accepts = ".json" onClick= "this.value=null" multiple />
+								</div>
+								<div>
+									<button id = "editBankButton" onClick = "startTest()">
+										Start Test
+									</button>
+								</div>
+							</div>
+							<div style = "display: flex">
+								<div class = 'inputContainer'>
+									Character: <input id = 'inputCharacter'  form = "text"/>
+								</div>
+								<div class = 'inputContainer'>
+									Pronounciation: <input id = 'inputPronounciation' form = "text" />
+								</div>
+								<div class = 'inputContainer'>
+									English Translation: <input id = 'inputTranslation' form = "text" />
+								</div>
+								<div style = " padding: 5px 0px 5px">
+									<button id = "enterButton" style = "margin-right: 10px">
+										Enter
+									</button>
+									<a id = "download">
+										<button id = "submitButton" type = "submit" onClick = "createBank()" style = "margin-right: 10px">
+											Submit
+										</button>
+									</a>
+								</div>
+							</div>
 						</div>
-						<div class = 'inputContainer'>
-							Pronounciation: <input id = 'inputPronounciation' form = "text" />
+					</div>
+					<div style = "display: flex; padding: 1% 0">
+						<div class = 'fieldContainer' style = "padding: .25% 2.8% .25% 24.5%">
+							Index
 						</div>
-						<div class = 'inputContainer'>
-							English Translation: <input id = 'inputTranslation' form = "text" />
+						<div class = 'fieldContainer' style = "padding: .25% 3% .25% 1.5%">
+							Character
 						</div>
-						<div style = " padding: 5px 0px 5px">
-							<button onClick = "insertWord()" style = "margin-right: 10px">
-								Enter
-							</button>
-							<button onClick = "createBank()" style = "margin-right: 10px">
-								Submit
-							</button>
+						<div class = 'fieldContainer' style = "padding: .25% 6.5% .25% 3%">
+							Pronounciation
+						</div>
+						<div class = 'fieldContainer' style = "padding-left: 6.5%">
+							English Translation
 						</div>
 					</div>						
 				</div>
-				<div id = "bankContainer" style = "justify-content: center; display: flex">
-					<div id = "bank" style = "border:1px solid; padding:10px; margin : 5px; width: 1100px">
-						<div id = "headerContainer" style = "font-style: italic; width: 100%">
-							<div id = "headerText">
-								The word bank is currently empty.
+				<div id = "bankUiContainer" style = "display: flex; justify-content: center">
+					<div id = "bankContainer" style = "justify-content: center; display: flex; padding-left: 8.95%">
+						<div id = "bank" style = "border:1px solid; padding:10px; margin : 5px; width: 1100px">
+							<div id = "headerContainer" style = "font-style: italic; width: 100%">
+								<div id = "headerText">
+									The word bank is currently empty.
+								</div>
+								<div id = "headerBreak" style = "display: none">
+									<br />
+								</div>
 							</div>
-							<div id = "headerBreak" style = "display: none">
-								<br />
+							<div id = "words" style = "font-size: 18pt"></div>
+						</div>
+					</div>
+					<div>
+						<div style = "border:1px solid; padding:10px; margin: 5px 5px 5px 20px; width: 12%: height: auto">
+							<div style = "text-align: center">
+								Word Banks Used
+							</div>
+							<div id = "wordBanksUsedDiv">
+							</div>
+							<div class = "break">
 							</div>
 						</div>
-						<div id = "words" style = "font-size: 18pt"></div>
+					</div>
+				</div>
+				<div id = "testContainer" style = "display: none">
+					<div style = "justify-content: center;display: flex">
+						<div style = "border: 1px solid; padding 10px; margin: 5px 5px 5px 20px; width: 23%; height: 200px; text-align: center">
+							<div id = "character" style = "padding: 66px 0; font-size: 36pt; font-weight: bold">
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Pronounciation
+						</div>
+						<div id = "prChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Pronounciation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Pronounciation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Pronounciation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Pronounciation')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 1% 0; text-align: center">
+						<div>
+							Translation
+						</div>
+						<div id = "tlChoiceContainer" style = "justify-content: center; display: flex">
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Translation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Translation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Translation')"></button>
+							</div>
+							<div class = "choiceContainer">
+								<button onClick = "selectChoice(this, 'Translation')"></button>
+							</div>
+						</div>
+					</div>
+					<div style = "padding: 3% 5%; text-align: center;">
+						<div>
+							<button id = "nextButton" style = "font-size: 22pt" onClick = "finalizeChoice()" disabled>
+								Next
+							</button>
+						</div>
+					</div>
+				</div>
+				<div id = "resultContainer" style = "display: none; padding-left: 150px">
+					<div id = "finalScore" style = "text-align: center">
+					</div>
+					<div id = "fractionScore" style = "text-align: center">
+					</div>
+					<div id = "sheetFlexContainer" style = "justify-content: center; display: flex">
+						<div id = "userSheetContainer">
+						</div>
+						<div id = "answerSheetContainer">
+						</div>
+						<div id = "incorrectSheetContainer">
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script>
+			document.getElementById("jsonInputs").addEventListener('change', onChange);
+			document.getElementById("enterButton").onclick = function(){insertWord(document.getElementById("inputCharacter").value,					
+				document.getElementById("inputPronounciation").value,
+				document.getElementById("inputTranslation").value)};
 		</script>
 	</body>
 </html>
