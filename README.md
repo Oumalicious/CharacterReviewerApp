@@ -9,3 +9,4 @@ at my own pace and occasionally review myself.
 There are 3 unique assets of this app: double layered multiple choice, retesting wrong characters/question, and portability.
 
 # Double layered
+There are 3 things to learning a foreign language: the foreign word(s) itself, its pronounciation, and its translaion the native tongue. There are
