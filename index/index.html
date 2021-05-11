@@ -14,10 +14,6 @@
 		.choiceContainer{
 			padding: 5px 10px 5px 10px
 		}
-		
-		#uiContainer > div{
-			
-		}
 	</style>
 	<script>
 		//variable handler for canceling edits
@@ -25,12 +21,12 @@
 		var wordBanksUsed = {};
 		var wordBanksAdded = {};
 		var wordBanksUsedStr = "";
-		var studentSheet = {};
-		var answerSheet = {};
-		var incorrectSheet = {};
+		var studentSheet, answerSheet, incorrectSheet;
 		var pronounciationChoices, translationChoices;
 		var testSheet, testIndex, score, maxScore;
 		var selectedPronounciation, selectedTranslation;
+		var questionInputTimer, testInputTimer, QUESTION_TIMER, RETEST, OUT_OF_TIME, TEST_DONE, RAPID_TEST;
+		var attempt = 1;
 		//take user parameters to create an entry
 		function insertWord(character, pronounciation, translation){
 			//alert user if missing parameter
@@ -116,6 +112,20 @@
 					headerText.style.color = "red";
 					headerText.style.display = "block";
 					document.getElementById("headerBreak").style.display = "none";
+					break;
+				//invalid timer
+				case 3:
+					headerText.innerHTML = "Invalid test timer. Please use the HOUR:MINUTE format.";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+					break;
+				case 4:
+					headerText.innerHTML = "Invalid question timer. Please enter only numbers for the question timer.";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+					break;
 			}
 		}
 		
@@ -278,7 +288,7 @@
 		}
 		
 		//read all divs and turn it into a downloadable JSON object
-		function createBank(button){
+		function createBank(){
 			let title = document.getElementById("bankTitle").value;
 			//prompt user if no title for word bank
 			if(title == ""){
@@ -290,6 +300,7 @@
 			bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + title;
 			let wordsBanksUsedDiv = document.getElementById("wordBanksUsedDiv");
 			wordsBanksUsedDiv.appendChild(bankUsedDiv);
+			//start building JSON by reading the "word bank"
 			let wordBank = {};
 			wordBank[title] = {};
 			let words = document.getElementById("words").childNodes;
@@ -298,6 +309,26 @@
 				wordBank[title][entry.childNodes[1].innerHTML]["pronounciation"] = entry.childNodes[2].innerHTML;
 				wordBank[title][entry.childNodes[1].innerHTML]["translation"] = entry.childNodes[3].innerHTML;
 			});
+			let questionTimer = document.getElementById("questionTimerInput").value;
+			let testTimer = document.getElementById("testTimerInput").value;
+			//using the 0 integer as a field to access JSON data outside of the word banks
+			if((questionTimer && questionTimer != "") || (testTimer && testTimer != "")){
+				wordBank[title][0] = {};
+				if(questionTimer && questionTimer != ""){
+					if(validTime(questionTimer, "question")){
+						wordBank[title][0]["questionTimer"] = questionTimer;
+					}else{
+						return;
+					}
+				}
+				if(testTimer && testTimer != ""){
+					if(validTime(testTimer, "timer")){
+						wordBank[title][0]["testTimer"] = testTimer;
+					}else{
+						return;
+					}
+				}
+			}
 			let data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(wordBank));
 			let downloader = document.getElementById('download');
 			downloader.setAttribute("href", "data:" + data);
@@ -309,6 +340,9 @@
 			let banks = event.target.files;
 			for(let i = 0; i < banks.length; ++i){
 				let wordBankName = banks[i].name.substring(0,banks[i].name.length-5);
+				if(Object.keys(wordBanksUsed).length  == 0){
+					document.getElementById("bankTitle").value = wordBankName;
+				}
 				if(wordBanksUsed[wordBankName]){
 					continue;
 				}
@@ -316,8 +350,17 @@
 				reader.onload = (function(event){
 					let obj = JSON.parse(event.target.result)[wordBankName];
 					Object.keys(obj).forEach(entry =>{
-							insertWord(entry, obj[entry].pronounciation, obj[entry].translation);
-							wordBanksUsed[wordBankName] = true;
+							if(entry != 0){
+								insertWord(entry, obj[entry].pronounciation, obj[entry].translation);
+								wordBanksUsed[wordBankName] = true;
+							}else{
+								if(obj[0]["questionTimer"]){
+									document.getElementById("questionTimerInput").value = obj[0]["questionTimer"];
+								}
+								if(obj[0]["testTimer"]){
+									document.getElementById("testTimerInput").value = obj[0]["testTimer"];
+								}
+							}
 					});
 					let bankUsedDiv = document.createElement("div");
 					bankUsedDiv.innerHTML = Object.keys(wordBanksUsed).length + ". " + wordBankName;
@@ -341,32 +384,96 @@
 			 return array;
 		}
 		
-		function startTest(){
+		function startTest(PROTOCOL){
+			TEST_DONE = false;
+			let testTimer = document.getElementById("testTimerInput").value;
+			studentSheet = {};
+			studentSheet[0] = {};
+			if(testTimer && testTimer != ""){
+				if(validTime(testTimer, "timer")){
+					document.getElementById("testTimer").style.display = "block";
+					studentSheet[0]["testTimer"] = testTimer;
+					startCountDownTimer(document.getElementById("testTimerInput").value);
+					OUT_OF_TIME = false;
+				}else{
+					return;
+				}
+			}
+			let questionTimer = document.getElementById("questionTimerInput").value;
+			if(questionTimer && questionTimer != ""){
+				if(validTime(questionTimer, "question")){
+					document.getElementById("questionTimer").style.display = "block";
+					QUESTION_TIMER = true;
+					studentSheet[0]["questionTimer"] = questionTimer + ":00";
+				}else{
+					return;
+				}
+			}
+			let rapidTest = document.getElementById("rapidCheckBox");
+			if(rapidTest.checked){
+				RAPID_TEST = true;
+			}
 			let words = document.getElementById("words").childNodes;
 			document.getElementById("uiContainer").style.display = "none";
 			document.getElementById("bankUiContainer").style.display = "none";
 			document.getElementById("testContainer").style.display = "block";
 			pronounciationChoices = [];
 			translationChoices = [];
-			Object.keys(words).forEach(entry =>{
-				let character = words[entry].childNodes[1].innerHTML;
-				answerSheet[character] = {};
-				answerSheet[character]["pronounciation"] = words[entry].childNodes[2].innerHTML;
-				pronounciationChoices.push(answerSheet[character]["pronounciation"]);
-				answerSheet[character]["translation"] = words[entry].childNodes[3].innerHTML;
-				translationChoices.push(answerSheet[character]["translation"]);
-			})
+			switch(PROTOCOL){
+				case 0:
+					answerSheet = {};
+					Object.keys(words).forEach(entry =>{
+						let character = words[entry].childNodes[1].innerHTML;
+						answerSheet[character] = {};
+						answerSheet[character]["pronounciation"] = words[entry].childNodes[2].innerHTML;
+						answerSheet[character]["translation"] = words[entry].childNodes[3].innerHTML;
+						pronounciationChoices.push(answerSheet[character]["pronounciation"]);
+						translationChoices.push(answerSheet[character]["translation"]);
+					});
+					break;
+				case 1:
+					Object.keys(answerSheet).forEach(copiedCharacter =>{
+						pronounciationChoices.push(answerSheet[copiedCharacter]["pronounciation"]);
+						translationChoices.push(answerSheet[copiedCharacter]["translation"]);
+					});
+					resetResults();
+					break;		
+				case 2:
+					let tempObj = {};
+					Object.keys(incorrectSheet).forEach(copiedIncorrectCharacter =>{
+						tempObj[copiedIncorrectCharacter] = {};
+						tempObj[copiedIncorrectCharacter]["pronounciation"] = answerSheet[copiedIncorrectCharacter]["pronounciation"];
+						tempObj[copiedIncorrectCharacter]["translation"] = answerSheet[copiedIncorrectCharacter]["translation"];
+						pronounciationChoices.push(answerSheet[copiedIncorrectCharacter]["pronounciation"]);
+						translationChoices.push(answerSheet[copiedIncorrectCharacter]["translation"]);
+					});
+					answerSheet = tempObj;
+					resetResults();
+					break;
+			}
 			testSheet = shuffle(Object.keys(answerSheet));
 			testIndex = 0;
 			score = 0;
 			maxScore = testSheet.length;
+			incorrectSheet = {};
 			nextQuestion(testIndex);
 		}
 		
 		function nextQuestion(index){
 			if(!testSheet[index]){
+				clearInterval(questionInputTimer);
+				clearInterval(testInputTimer);
+				TEST_DONE = true;
 				calculateScore();
 				return;
+			}
+			if(OUT_OF_TIME){
+				finalizeChoice();
+				return;
+			}
+			let questionTimer = document.getElementById("questionTimerInput").value;
+			if(QUESTION_TIMER){
+				startQuestionTimer();
 			}
 			let currentCharacter = document.getElementById("character");
 			currentCharacter.innerHTML = testSheet[index];
@@ -417,7 +524,7 @@
 		}
 		
 		function finalizeChoice(){
-			let character = document.getElementById("character").innerHTML;
+			let character = testSheet[testIndex];
 			if(answerSheet[character]["pronounciation"] == selectedPronounciation && answerSheet[character]["translation"] == selectedTranslation){
 				score++;
 			}else{
@@ -426,8 +533,17 @@
 				incorrectSheet[character]["translation"] = selectedTranslation
 			}
 			studentSheet[character] = {};
+			if(QUESTION_TIMER){
+				studentSheet[character]["questionTimer"] = document.getElementById("questionTimer").innerHTML;
+			}
 			studentSheet[character]["pronounciation"] = selectedPronounciation;
 			studentSheet[character]["translation"] = selectedTranslation;
+			if(OUT_OF_TIME){
+				selectedPronounciation = null;
+				selectedTranslation = null;
+				nextQuestion(++testIndex);
+				return;
+			}
 			let prChoiceContainer = document.getElementById("prChoiceContainer").children;
 			Array.prototype.forEach.call(prChoiceContainer, div =>{
 				div.children[0].style.color = "black";
@@ -436,8 +552,8 @@
 			Array.prototype.forEach.call(tlChoiceContainer, div =>{
 				div.children[0].style.color = "black";
 			});
-			selectedPronounciation = "";
-			selectedTranslation = "";
+			selectedPronounciation = null;
+			selectedTranslation = null;
 			document.getElementById("nextButton").disabled = true;
 			nextQuestion(++testIndex);
 		}
@@ -448,6 +564,8 @@
 		}
 		
 		function calculateScore(){
+			document.getElementById("testTimer").style.display = "none";
+			document.getElementById("questionTimer").style.display = "none";
 			let finalScore = score/maxScore * 100 + "%";
 			let fractionScore = score + "/" + maxScore;
 			document.getElementById("finalScore").innerHTML = finalScore;
@@ -475,10 +593,35 @@
 						userSheetContainer.children[index].children[2].style.color = "red";
 					}
 				}
+				if(QUESTION_TIMER){
+					let BACKSLASH = document.createElement("span");
+					BACKSLASH.innerHTML = " \\";
+					BACKSLASH.style.color = "black";
+					userSheetContainer.children[index].children[0].appendChild(BACKSLASH);
+					let timerSpan = document.createElement("span");
+					timerSpan.innerHTML = " [" + studentSheet[character]["questionTimer"] + "]";
+					let setQuestionTimer = Number.parseInt(studentSheet[0]["questionTimer"].replace(":", ""));
+					let questionTimer = Number.parseInt(studentSheet[character]["questionTimer"].replace(":", ""));
+					if(questionTimer < setQuestionTimer){
+						timerSpan.style.color = "#00008b";
+					}else{
+						timerSpan.style.color = "#ff00f3";
+					}
+					userSheetContainer.children[index].children[0].appendChild(timerSpan);
+				}
 				index++;
 			});
 			document.getElementById("testContainer").style.display = "none";
+			document.getElementById("testTimer").innerHTML = "";
+			document.getElementById("questionTimer").innerHTML = "";
 			document.getElementById("resultContainer").style.display = "block";
+			if(score/maxScore == 1){
+				document.getElementById("retestContainer").style.display = "none";
+				document.getElementById("redownloadContainer").style.display = "none";
+			}else{
+				document.getElementById("retestContainer").style.display = "block";
+				document.getElementById("redownloadContainer").style.display = "block";
+			}
 			Object.keys(incorrectSheet).forEach(character =>{
 				let incorrectSheetContainer = document.getElementById("incorrectSheetContainer");
 				appendToResults(incorrectSheetContainer, incorrectSheet, character);
@@ -504,11 +647,174 @@
 			entryContainer.append(divTranslation);
 			container.append(entryContainer);
 		}
+		
+		function startCountDownTimer(selectedTime){
+			let time = selectedTime.split(":");
+			let milliseconds = time[0]*60*60*1000 + time[1]*60*1000;
+			let finishTime = new Date();
+			finishTime.setHours(finishTime.getHours() + Number.parseInt(time[0]));
+			finishTime.setMinutes(finishTime.getMinutes() + Number.parseInt(time[1]));
+			testInputTimer = setInterval(function(){
+				let currentTime = new Date().getTime();
+				let difference = finishTime - currentTime;
+				if(difference <= 0){
+					clearInterval(testInputTimer);
+					OUT_OF_TIME = true;
+					finalizeChoice();
+					return;
+				}
+				let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + ":";
+				let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)) + ":";
+				let seconds = Math.floor((difference % (1000 * 60)) / (1000)) + ":";
+				let milliseconds = Math.floor(difference % 1000 / 10);
+				if(milliseconds < 10){
+					milliseconds *= 10;
+				}
+				if(checkZero(hours)){
+					hours = "";
+					if(checkZero(minutes)){
+						minutes = "";
+						if(checkZero(seconds)){
+							seconds = "0:";
+						}
+					}
+				}
+				let timeString = hours + minutes + seconds + milliseconds;
+				let timerDiv = document.getElementById("testTimer");
+				timerDiv.innerHTML = timeString;
+			}, 10);
+		}
+		
+		function startQuestionTimer(){
+			if(questionInputTimer){
+				clearInterval(questionInputTimer);
+			}
+			let start = new Date().getTime();
+			questionInputTimer = setInterval(function(){
+				let currentTime = new Date().getTime();
+				let difference = currentTime - start;
+				//IF difference == questionTimer, call nextQuestion
+				let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + ":";
+				let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)) + ":";
+				let seconds = Math.floor((difference % (1000 * 60)) / (1000)) + ":";
+				let milliseconds = Math.floor(difference % 1000 / 10);
+				if(checkZero(hours)) hours = "";
+				if(checkZero(minutes)) minutes = "";
+				if(checkZero(seconds)) seconds = "0:";
+				if(milliseconds < 10){
+					milliseconds *= 10;
+				}
+				let timeString = hours + minutes + seconds + milliseconds;
+				let questionTimerDiv = document.getElementById("questionTimer");
+				questionTimerDiv.innerHTML = timeString;
+				timeString = Number.parseInt(timeString.replace(":", ""));
+				let questionTimer = Number.parseInt(studentSheet[0]["questionTimer"].replace(":", ""));
+				if(timeString >= questionTimer && !TEST_DONE && RAPID_TEST){
+					questionTimerDiv.innerHTML = studentSheet[0]["questionTimer"];
+					finalizeChoice();
+				}
+			}, 10);
+		}
+		
+		function checkZero(number){
+			let x = Number.parseInt(number.substring(0));
+			return x == 0;
+		}
+		
+		function validTime(value, type){
+			switch(type){
+				case "question":
+					let regex = "\\d+";
+					if(!value.match(regex)){
+						headerChange(4);
+						return false;
+					}else{
+						return true;
+					}
+					break;
+				case "timer":
+					if(value.indexOf(":") < 0 || value.indexOf(":") == 0 && value.indexOf(":") == (value.length - 1)){
+						headerChange(3);
+						console.log("no colon");
+						return false;
+					}else{
+						let tempArray = value.split(":");
+						let regex = "\\w+";
+						if(!tempArray[0].match(regex) || !tempArray[1].match(regex)){
+							headerChange(3);
+							console.log("invalid test timer")
+							return false;
+						}else{
+							return true;
+						}
+					break;
+					}
+				
+			}
+		}
+		
+		function resetResults(){
+			let divArray = [];
+			divArray.push(document.getElementById("finalScore"));
+			divArray.push(document.getElementById("fractionScore"));
+			divArray.push(document.getElementById("userSheetContainer"));
+			divArray.push(document.getElementById("answerSheetContainer"));
+			divArray.push(document.getElementById("incorrectSheetContainer"));
+			divArray.forEach(div =>{
+				div.innerHTML = "";
+			});
+			document.getElementById("resultContainer").style.display = "none";
+		}
+		
+		function downloadIncorrect(){
+			let title = document.getElementById("bankTitle").value + "_attempt" + attempt;
+			attempt++;
+			let wordBank = {};
+			wordBank[title] = {};
+			let incorrectWords = document.getElementById("incorrectSheetContainer").children;
+			Array.prototype.forEach.call(incorrectWords, function(entry){
+				wordBank[title][entry.childNodes[0].innerHTML] = {};
+				wordBank[title][entry.childNodes[0].innerHTML]["pronounciation"] = answerSheet[entry.childNodes[0].innerHTML]["pronounciation"];
+				wordBank[title][entry.childNodes[0].innerHTML]["translation"] = answerSheet[entry.childNodes[0].innerHTML]["translation"];
+			});
+			let questionTimer = document.getElementById("questionTimerInput").value;
+			let testTimer = document.getElementById("testTimerInput").value;
+			//using the 0 integer as a field to access JSON data outside of the word banks
+			if((questionTimer && questionTimer != "") || (testTimer && testTimer != "")){
+				wordBank[title][0] = {};
+				if(questionTimer && questionTimer != ""){
+					if(validTime(questionTimer, "question")){
+						wordBank[title][0]["questionTimer"] = questionTimer;
+					}else{
+						return;
+					}
+				}
+				if(testTimer && testTimer != ""){
+					if(validTime(testTimer, "timer")){
+						wordBank[title][0]["testTimer"] = testTimer;
+					}else{
+						return;
+					}
+				}
+			}
+			let data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(wordBank));
+			let downloader = document.getElementById('redownload');
+			downloader.setAttribute("href", "data:" + data);
+			downloader.setAttribute("download", title + ".json");
+		}
+		
 </script>
 	<body>
 		<div>
 			<div>
+				<div id = "testTimer" style = "display: none"><span> [ TEST TIMER ] </span>
+				</div>
+				<div id = "questionTimer" style = "display: none"><span> [ QUESTION TIMER ] </span>
+				</div>
 				<div id = "uiContainer">
+					<div style = "text-align: center; padding: .5%; font-size: 24pt; font-weight: bold">
+						Vocabulary Reviewer
+					</div>
 					<div style = "display: flex; justify-content: center; padding-top: .5%">
 						<div style = "border: 2px solid; border-color: red; padding: 1%">
 							<div style = "padding: 5px 0px 5px; text-align: center">
@@ -525,10 +831,17 @@
 									<input type = "file" id = "jsonInputs" accepts = ".json" onClick= "this.value=null" multiple />
 								</div>
 								<div>
-									<button id = "editBankButton" onClick = "startTest()">
+									<button id = "startButton" onClick = "startTest(0)">
 										Start Test
 									</button>
 								</div>
+							</div>
+							<div id = "questionTimerContainer" style = "text-align: center; padding-bottom: 5px; padding-left: 13.8%">
+								Question Timer (Optional): How many seconds per question? <input id = "questionTimerInput" form = "text" /> 
+								<input id = "rapidCheckBox" type = "checkbox" /><span>Rapid Fire Testing</span>
+							</div>
+							<div id = "testTimerContainer" style = "text-align: center">
+								Test Length (Optional): Enter time in HOUR:MINUTE format <input id = "testTimerInput" form = "text" />
 							</div>
 							<div style = "display: flex">
 								<div class = 'inputContainer'>
@@ -546,7 +859,7 @@
 									</button>
 									<a id = "download">
 										<button id = "submitButton" type = "submit" onClick = "createBank()" style = "margin-right: 10px">
-											Submit
+											Create Test
 										</button>
 									</a>
 								</div>
@@ -647,17 +960,33 @@
 						</div>
 					</div>
 				</div>
-				<div id = "resultContainer" style = "display: none; padding-left: 150px">
+				<div id = "resultContainer" style = "display: none">
 					<div id = "finalScore" style = "text-align: center">
 					</div>
 					<div id = "fractionScore" style = "text-align: center">
 					</div>
-					<div id = "sheetFlexContainer" style = "justify-content: center; display: flex">
+					<div id = "sheetFlexContainer" style = "justify-content: center; display: flex; padding-left: 150px">
 						<div id = "userSheetContainer">
 						</div>
 						<div id = "answerSheetContainer">
 						</div>
 						<div id = "incorrectSheetContainer">
+						</div>
+					</div>
+					<div class = "break">
+					</div>
+					<div id = "retryContainer" style = "display: flex; justify-content: center;">
+						<div id = "retryContainer" style = "padding: 1%">
+							<button onClick = "startTest(1)" style = "padding: 2%; font-size: 20pt">Retry</button>
+						</div>
+						<div id = "retestContainer" style = "padding: 1%">
+							<button onClick = "startTest(2)" style = "padding: 2%; font-size: 20pt">Retest</button>
+						</div>
+						<div id = "redownloadContainer" style = "padding: 1%">
+							<a id = "redownload">
+								<button onClick = "downloadIncorrect()" style = "padding: 2%; font-size: 20pt">Redownload</button>
+							</a>
+							</div>
 						</div>
 					</div>
 				</div>
