@@ -1,4 +1,5 @@
 # VocabularyReviewerApp
+Github page: https://oumalicious.github.io/VocabularyReviewer/
 A browser app with a 3-way column matching score system, built to practice memorizing languages that use characters.
 As a Chinese Asian American, I'm embarrassed to call myself Chinese when I know very little of my language. I only speak it at home or amongst friends. I have good fundamentals in tones and sentence structure, but my weakness lie in vocabulary. I remember going to Saturday school to learn Chinese, reading paragraphs of characters with perfect eunciation, but I had know idea what I was saying. I studied for tests because I had the mindset of "grades are important because it's a reflection of how smart you are." With this app that was initially built on a whim, I can slowly learn more vocabulary at my own pace and occasionally review myself. This current iteration of the app is for learning foreign languages. While it can be used in a more general sense or use more layers, I want this app to be unique and not be the solver of all problems (yet).
 
