@@ -6,7 +6,7 @@ As a Chinese Asian American, I'm embarrassed to call myself Chinese when I know 
 
 There are 3 unique assets of this app: double layered multiple choice, retesting wrong characters/question, and portability. The point of studying is to learn something new. Take one test to eliminate the words that already known, then start working from there.
 
-# Double layered
+# Double Layered Multiple Choice Test
 There are 3 things to learning a foreign language: the foreign word(s) itself, its pronounciation, and its translaion the native tongue. For some, studying can be very difficult. One may need to dig their eyes into papers, create index cards, or use a 3rd party platform like Quizlet. However there are numerous factors and obstacles that make these methods impratically. Words on a paper are static, so its possible that the order of the words influence this "act of memorization". There are three sides to learning a new languages, so index cards would have to fit an extra layer of information. Quizlet is a great platform, but it doesn't have a function to retest the questions that were incorrect. How can it filter the 45 words that you don't know from a 200 word bank?
 
 # Retesting
