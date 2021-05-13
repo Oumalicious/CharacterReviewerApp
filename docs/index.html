@@ -377,15 +377,18 @@
 			}
 		}
 		
-		//lol stacks over flow ez
 		function shuffle(array) {
-			var currentIndex = Object.keys(array).length, temporaryValue, randomIndex;
-			while (0 !== currentIndex) {
-				randomIndex = Math.floor(Math.random() * currentIndex);
-				currentIndex -= 1;
-				temporaryValue = array[currentIndex];
-				array[currentIndex] = array[randomIndex];
-				array[randomIndex] = temporaryValue;
+			let currentIndex = Object.keys(array).length, temporaryValue, randomIndex;
+			let SEVEN_TIMES_THE_CHARM = 7;
+			while(SEVEN_TIMES_THE_CHARM > 0){
+				while (0 !== currentIndex) {
+					randomIndex = Math.floor(Math.random() * currentIndex);
+					currentIndex -= 1;
+					temporaryValue = array[currentIndex];
+					array[currentIndex] = array[randomIndex];
+					array[randomIndex] = temporaryValue;
+				}
+				SEVEN_TIMES_THE_CHARM--;
 			}
 			 return array;
 		}
