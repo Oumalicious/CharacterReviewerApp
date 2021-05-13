@@ -126,6 +126,12 @@
 					headerText.style.display = "block";
 					document.getElementById("headerBreak").style.display = "none";
 					break;
+				case 5:
+					headerText.innerHTML = "Need at least 3 words to start the test.";
+					headerText.style.color = "red";
+					headerText.style.display = "block";
+					document.getElementById("headerBreak").style.display = "none";
+					break;
 			}
 		}
 		
@@ -385,6 +391,11 @@
 		}
 		
 		function startTest(PROTOCOL){
+			let tempWords = document.getElementById("words").children;
+			if(tempWords.length < 3){
+				headerChange(5);
+				return;
+			}
 			TEST_DONE = false;
 			let testTimer = document.getElementById("testTimerInput").value;
 			studentSheet = {};
@@ -497,7 +508,13 @@
 			array = shuffle(array);
 			let skip = false;
 			let choiceArray = [];
-			for(let i = 0; i < 3; i++){
+			let length = testSheet.length;
+			if(length == 3){
+				length = 2;
+			}else{
+				length = 3;
+			}
+			for(let i = 0; i < length; i++){
 				if(skip){
 					choiceArray.push(array[i+1]);
 				}else{
@@ -513,6 +530,9 @@
 		}
 		
 		function selectChoice(currentButton, type){
+			if(currentButton.innerHTML == ""){
+				return;
+			}
 			Array.prototype.forEach.call(currentButton.parentNode.parentNode.children, div =>{
 				div.children[0].style.color = "black";
 			});
@@ -704,6 +724,9 @@
 				if(milliseconds < 10){
 					milliseconds *= 10;
 				}
+				if(milliseconds == 0){
+					milliseconds = "00";
+				}
 				let timeString = hours + minutes + seconds + milliseconds;
 				let questionTimerDiv = document.getElementById("questionTimer");
 				questionTimerDiv.innerHTML = timeString;
@@ -807,9 +830,9 @@
 	<body>
 		<div>
 			<div>
-				<div id = "testTimer" style = "display: none"><span> [ TEST TIMER ] </span>
+				<div id = "testTimer" style = "display: none"><span id = "testTimerSpan"> [ TEST TIMER ] </span>
 				</div>
-				<div id = "questionTimer" style = "display: none"><span> [ QUESTION TIMER ] </span>
+				<div id = "questionTimer" style = "display: none"><span id = "questionTimerSpan"> [ QUESTION TIMER ] </span>
 				</div>
 				<div id = "uiContainer">
 					<div style = "text-align: center; padding: .5%; font-size: 24pt; font-weight: bold">
