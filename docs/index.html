@@ -651,6 +651,9 @@
 			});
 		}
 		
+		<!-- container : result column -->
+		<!-- sheet: student, answer, or result container -->
+		<!-- character: the key for the container -->
 		function appendToResults(container, sheet, character){
 			let divCharacter = document.createElement('div');
 			divCharacter.innerHTML = character;
@@ -759,16 +762,14 @@
 					}
 					break;
 				case "timer":
-					if(value.indexOf(":") < 0 || value.indexOf(":") == 0 && value.indexOf(":") == (value.length - 1)){
+					if(value.indexOf(":") <= 0 && value.indexOf(":") == (value.length - 1)){
 						headerChange(3);
-						console.log("no colon");
 						return false;
 					}else{
 						let tempArray = value.split(":");
 						let regex = "\\w+";
 						if(!tempArray[0].match(regex) || !tempArray[1].match(regex)){
 							headerChange(3);
-							console.log("invalid test timer")
 							return false;
 						}else{
 							return true;
